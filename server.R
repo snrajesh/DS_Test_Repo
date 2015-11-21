@@ -1,33 +1,56 @@
 #server.R
 
-# load necessary libraries
+#
+## Code that executed once when application starts 
+# 
+
+# A. load necessary libraries (only once when application start on the server)
 library(shiny)
 #library(UsingR)
 library(dplyr)
 library(ggplot2)
 library(plotly)
+library(rCharts)
+#install.packages(c("maps", "mapproj"))
+library(maps)
+library(mapproj)
+library(googleVis)
 Sys.setenv("plotly_username" = "snrajesh")
 Sys.setenv("plotly_api_key" = "0t65w3ld8k")
 
-# load cleanedup and sumarized data from file into data frame (Data.R)
+# B. load cleanedup and sumarized data from file into data frame (Data.R)
 pm25emissionsByState <- readRDS('pm25emissionsByState.rds')
 pm25emissions <- readRDS('pm25emissions.rds')
 pm25emissions$stateCode <- as.character(pm25emissions$stateCode)
 
 pm25emissions2008ByState <- readRDS('pm25emissions2008ByState.rds')
 pm25emissions2008ByState$stateCode <- as.character(pm25emissions2008ByState$stateCode)
+pm25emissions2008ByState$emissions = round(pm25emissions2008ByState$emissions)
 
 pm25emissions2008ByCounty <- readRDS('pm25emissions2008ByCounty.rds')
 pm25emissions2008ByCounty$stateCode <- as.character(pm25emissions2008ByCounty$stateCode)
+pm25emissions2008ByCounty$emissions = round(pm25emissions2008ByCounty$emissions)
+
+pm25emissions2008BySource <- readRDS('pm25emissions2008BySource.rds')
+
+
 
 states <- readRDS('states.rds')
 fips <- readRDS('fips.rds')
 
-#install.packages(c("maps", "mapproj"))
 
-library(maps)
-library(mapproj)
-library(googleVis)
+
+#
+## E. Additional functions that are called later (within user sessions or reactive sessions)
+#
+
+# legend for all maps
+legendText <- c("0 - 25%","25 - 50%","50 - 75%","75 - 100%")
+#legendText <- c("1. 0 - 25%","2. 25 - 50%","3. 50 - 75%","4. 75 - 100%")
+
+#color shades to use for States and Counties on US map
+colorShades <- colorRampPalette(c("lightblue", "darkblue"))(4)
+
 
 # function to show states on US map with color based on quartile
 quartileStateMap <- function() {
@@ -41,27 +64,26 @@ quartileStateMap <- function() {
         left_join(pm25emissions2008ByState, by = c("abb" = "stateCode") );
     
     # generate vector of fill colors for map
-    color <- 'darkblue'; 
-    shades <- colorRampPalette(c("lightblue", color))(4)
-    fills <- shades[stateOrder$bucket]
+    colorFilling <- colorShades[stateOrder$bucket]
     
     # plot choropleth map at the state level
-    map("state", fill = TRUE, col = fills, 
-        resolution = 0, lty = 0, projection = "polyconic", 
+    map("state", fill = TRUE, col = colorFilling, 
+        resolution = 0, lty = 0, projection = "polyconic",
         myborder = 0, mar = c(0,0,0,0))
     
     # overlay state borders
     map("state", col = "white", fill = FALSE, add = TRUE,
-        lty = 1, lwd = 1, projection = "polyconic", 
+        lty = 1, lwd = .2, projection = "polyconic",
         myborder = 0, mar = c(0,0,0,0))
     
     # add a legend
-    legend("bottomleft", cex = .75, #inset = -.01, 
-           legend = c("1. 0 - 25%","2. 25 - 50%","3. 50 - 75%","4. 75 - 100%"), 
-           fill = shades[],
-           title = 'Quartile'
+    legend("bottomleft", cex = .75, 
+           legend = legendText, horiz = TRUE,
+           fill = colorShades[], title = 'Quartile'
     )
+    title("PM25 Emissions by State, 2008")
 }
+
 
 # function to show counties of a state with color based on quartile
 quartileCountyMap <- function(inStateCode='') {
@@ -85,50 +107,114 @@ quartileCountyMap <- function(inStateCode='') {
         mutate(fips = formatC(fips, width=5, flag="0")); 
     countyOrder <- left_join(countyOrder, plotDataState, by = c("fips" = "fips") )
     
-    
-    # generate vector of fill colors for map
-    color <- 'darkgreen'; 
-    shades <- colorRampPalette(c("lightgreen", color))(4)
-    
+
     # plot choropleth map at the county level for the selected state
-    if (inStateCode == '') {
-        countyFills <- shades[countyOrder$bucket]
-        map("county", fill = TRUE, col = countyFills, 
+    if (inStateCode != '') {
+        
+        # generate vector of fill colors for map
+        countyFills <- colorShades[countyOrder[grep(vState,countyOrder$polyname),'bucket']]
+        
+        # map for the input state with counties shaded
+        map("county", grep(vState,countyOrder$polyname,value=TRUE), fill = TRUE, col = countyFills, 
             resolution = 0, lty = 0, projection = "polyconic", 
-            myborder = 0, mar = c(0,0,0,0))
+            myborder = 0, mar = c(0,0,0,0))     
         
     } else {
-        countyFills <- shades[countyOrder[grep(vState,countyOrder$polyname),'bucket']]
-        map("county", grep(vState,countyOrder$polyname,value=TRUE), fill = TRUE, col = countyFills, 
+
+        # generate vector of fill colors for map
+        countyFills <- colorShades[countyOrder$bucket]
+        
+        # map for all states with counties shaded
+        map("county", fill = TRUE, col = countyFills, 
             resolution = 0, lty = 0, projection = "polyconic", 
             myborder = 0, mar = c(0,0,0,0))
     }
     
     # add a legend
-    legend("bottomleft", cex = .7, #inset = -.01, 
-           legend = c("0 - 25%","25 - 50%","50 - 75%","75 - 100%"), 
-           fill = shades[],
-           title = 'Quartile'
+    legend("bottomleft", cex = .75, 
+           legend = legendText, #horiz = TRUE,
+           fill = colorShades[], title = 'Quartile'
     )
+    
+    title(paste0("PM25 Emissions for ", vState, ", 2008"))
+    
+
 }
 
+combinedPlotState  <- function(inStateCode='') {
+    # plot the emission at the counties for the selected state
+    plot_ly(plotDataState, x = county, y = emissions, #text = paste("County: ", county),
+            mode = "markers", color = bucket);
+    
+    
+}
 
 # Define server logic for the application
 shinyServer(
     function(input, output) {
-        output$map <- renderPlot({quartileStateMap()});
-        output$map2 <- renderPlot({quartileCountyMap('AL')});
+        
+        # non-reactive section - executed only once per user session or page refresh
+        
+        # plot US map at state level
+        output$USmap <- renderPlot({quartileStateMap()});
+        output$stateMap <- renderPlot({quartileCountyMap('')});
+        
+        # table with level summary emissions data for 2008
+        outData1 <- mutate(pm25emissions2008ByState, emissions = round(emissions))
+        output$stateTable <- renderDataTable({outData1}) #, options = list(pageLength = 55))
+       
+        #
+        # reactive sections - executed once per interaction/change
+        #
         
         inputState <- reactive({toupper(input$stateCode)})
-        output$inputState <- renderPrint({inputState()})
         
-       #output$googlePlot <- renderPrint({print(gvisMotionChart(Fruits, "Fruit", "Year", options = list(width = 600, height = 400)),"chart")})
+        # plot the counties for the selected state map
+        outPlot2 <- reactive({quartileCountyMap(inputState())});
+        output$stateMap <- renderPlot({outPlot2()});
         
-        # Expression to generate plots
-        # The expression is wrapped in a call to renderPlot to indicate that the output is a plot
-        #   And It is "reactive" and therefore should re-execute automatically when inputs change
+        # get county level summary data for 2008
+        countyData <- reactive({filter(pm25emissions2008ByCounty, stateCode == inputState())});
+        
+        # Table of emission data for the counties of the selected state
+        output$countyTable <- renderDataTable({countyData()}) #, options = list(pageLength = 55))
 
-        # get the data based on the selected state
+        # plot the emission at the counties for the selected state
+#         outPlot4 <- reactive({
+#             plotData <- countyData()
+#             plotData$quartile <- as.integer(cut(plotData$emissions, quantile(plotData$emissions), 
+#                                                 include.lowest = TRUE, ordered = TRUE));
+#             plot_ly(plotData, x = county, y = emissions, text = paste("County: ", county),
+#                     mode = "markers", color = quartile);
+#         });
+        #output$myPlot4 <- renderPlotly({outPlot3()})
+        
+        # get county level data at source level
+        countyDataBySource <- reactive({filter(pm25emissions2008BySource, stateCode == inputState())});
+    
+        outPlot3 <- reactive({
+                plot_ly(countyDataBySource(), x = county, y = emissions, #text = paste("County: ", county),
+                         mode = "markers", color = category);
+        });
+        output$myPlot3 <- renderPlotly({outPlot3()});
+        
+#         outPlot5 <- reactive({
+#             plotData <- countyDataBySource();
+#             nPlot(emissions ~ county, group = 'category', data = plotData, 
+#                   type = 'multiBarHorizontalChart');
+#         });
+#         output$myPlot5 <- renderPlotly({outPlot5()});
+
+
+        #output$myPlot3 <- renderPlotly({outPlot3()});
+        
+        #         ggp <- ggplot(data = d, aes(x = carat, y = price)) +
+        #             geom_point(aes(text = paste("Clarity:", clarity)), size = 4) +
+        #             geom_smooth(aes(colour = cut, fill = cut), method='lm') + facet_wrap(~ cut);
+        #         gg <- ggplotly(ggp)
+        
+        
+        # get the data over year for the selected state
         plotData <- reactive({filter(pm25emissionsByState, stateCode == inputState());})
         
         outPlot <- reactive({    
@@ -142,43 +228,14 @@ shinyServer(
             plot1
         });
         
-        output$myPlot <- renderPlot({outPlot()});
-        
-        # plot the counties for the selected state
-        outPlot2 <- reactive({quartileCountyMap(inputState())});
-        output$map2 <- renderPlot({outPlot2()});
-        
-#         outPlot3 <- reactive({
-#             plotData3 <- pm25emissions %>% 
-#                 filter(year == 2008, stateCode == inputState()) %>%
-#                 #mutate(county = as.character(county), stateCode = as.character(stateCode)) %>%
-#                 group_by(category, county, state) %>%
-#                 summarize(emissions = sum(emissions, na.rm = TRUE))
-#         });
-        
-        
-                       
-        outPlot3 <- reactive({
-            plotData3 <- filter(pm25emissions2008ByCounty, stateCode == inputState());
-            p <- plot_ly(plotData3, x = county, y = emissions, #text = paste("County: ", county),
-                    mode = "markers")#, color = category);
-            p
-        })
-        
-        output$myPlot3 <- renderPlot({outPlot3()});
-        
-#         ggp <- ggplot(data = d, aes(x = carat, y = price)) +
-#             geom_point(aes(text = paste("Clarity:", clarity)), size = 4) +
-#             geom_smooth(aes(colour = cut, fill = cut), method='lm') + facet_wrap(~ cut);
-#         gg <- ggplotly(ggp)
+        output$trendPlot <- renderPlot({outPlot()});
 
-                
         trend <- reactive({
             xSlope <- sign(lm(emissions ~ year, plotData())$coefficients['year'])
             if (xSlope > 0) {'Increasing'} else {'Decreasing'}
             #if (is.na(input$stateCode) | input$stateCode == '' ) {'NA'}
         })
-       output$prediction <- renderPrint({trend()}); 
+        output$prediction <- renderPrint({trend()}); 
         
         lmod <- reactive({
             xSlope <- lm(emissions ~ year, plotData());
@@ -186,18 +243,10 @@ shinyServer(
             if  (nrow(plotData()) == 0) {'NA'} else {summary(xSlope)}
             
         })
-       
+        
         output$model <- renderPrint({lmod()}); 
         
-
+        
     }
 )
-
-
-
-
-
-
-
-
 
