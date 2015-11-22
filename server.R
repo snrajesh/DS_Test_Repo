@@ -110,8 +110,10 @@ shinyServer(
         countyDataBySource <- reactive({filter(pm25emissions2008BySource, stateCode == inputState())});
     
         outPlot3 <- reactive({
-            plot_ly(countyDataBySource(), x = county, y = emissions, #text = paste("County: ", county),
-                     mode = "markers", color = category);
+            plot3 <- plot_ly(countyDataBySource(), x = county, y = emissions, #text = paste("Source: ", category),
+                    mode = "markers", color = category)
+            plot3 %>% layout(title = paste("Emissions by County for :", inputState())) 
+                # %>% add_trace(y = fitted(lm(emissions ~ county)), color = 'Linear Regression Line')
         });
         
         output$countyPlot <- renderPlotly({outPlot3()});
