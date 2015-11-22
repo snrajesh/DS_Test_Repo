@@ -1,0 +1,62 @@
+One Click  Emissions  
+========================================================
+author: Rajesh Santha Nambiar
+date: Nov 21, 2015
+transition: rotate
+  
+    
+    
+    
+An app for fine particle (PM2.5) emissions analysis  
+(Developed as part of "Developing Data Products" -   
+a Johns Hopkins Data Science Program, via Courseera)
+
+
+What we bring?
+========================================================
+
+In a nutshell, this application provides a comparative overview of fine particle (PM2.5) emissions in the United States.
+
+- A **Walk-Up-And-Use** app (i.e. no training required to use the app)
+- USA **map** with states color-shaded based on emissions
+- With **One Click** you can drill down to a state
+- Plot showing **emission trend** for your state of choice
+- Supporting detail **data** for curious users
+
+How does it look?
+========================================================
+
+User friendly app, with beautiful dashboard for your state
+![US Map](MainScreen.PNG)
+  
+  
+Let us see how it looks for NY?
+========================================================
+
+```{r, echo=FALSE, cache=TRUE}
+#load data
+#pm25emissions2008ByState <- readRDS('./data/pm25emissions2008ByState.rds')
+pm25emissions2008ByCounty <- readRDS('./data/pm25emissions2008ByCounty.rds')
+
+# functions for plotting map
+source('./code/functions.R')
+
+# genarte plot/map
+#quartileStateUSMap()
+quartileCountyMap('NY')
+
+```
+  
+
+Sneek Peek of the data
+========================================================
+
+```{r loadData, cache=TRUE, echo=TRUE}
+## load data
+df <- readRDS('./data/emissionsData.rds')
+
+## preview data
+summary(df)
+#head(emissionsData)
+
+```
