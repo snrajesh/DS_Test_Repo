@@ -60,7 +60,7 @@ quartileCountyMap <- function(inStateCode='') {
     
     if (inStateCode == '') {
         plotDataState <- pm25emissions2008ByCounty;
-        vState <- '.'
+        vState <- 'USA'
     } else {
         plotDataState <- filter(pm25emissions2008ByCounty, stateCode == inStateCode);
         vState <- as.character(states %>% filter(stateCode==inStateCode) %>% 
@@ -85,11 +85,19 @@ quartileCountyMap <- function(inStateCode='') {
         countyFills <- colorShades[countyOrder[grep(vState,countyOrder$polyname),'bucket']]
         
         # map for the input state with counties shaded
-        map("county", grep(vState,countyOrder$polyname,value=TRUE), fill = TRUE, col = countyFills, 
+        map("county", grep(vState,countyOrder$polyname,value=TRUE), 
+            fill = TRUE, col = countyFills, 
             resolution = 0, lty = 0, projection = "polyconic", 
             myborder = 0, mar = c(0,0,0,0))     
         
+        # overlay county borders
+        map("county", grep(vState,countyOrder$polyname,value=TRUE), 
+            fill = FALSE, col = 'white', add = TRUE,
+            resolution = 0, lty = 0, projection = "polyconic", 
+            myborder = 0, mar = c(0,0,0,0))
+        
     } else {
+        # if no state is selected, plot for all counties in the whole country
         
         # generate vector of fill colors for map
         countyFills <- colorShades[countyOrder$bucket]
@@ -98,6 +106,12 @@ quartileCountyMap <- function(inStateCode='') {
         map("county", fill = TRUE, col = countyFills, 
             resolution = 0, lty = 0, projection = "polyconic", 
             myborder = 0, mar = c(0,0,0,0))
+        
+        # overlay state borders
+        map("state", col = "white", fill = FALSE, add = TRUE,
+            lty = 1, lwd = .2, projection = "polyconic",
+            myborder = 0, mar = c(0,0,0,0))
+        
     }
     
     # add a legend
@@ -106,7 +120,7 @@ quartileCountyMap <- function(inStateCode='') {
            fill = colorShades[], title = 'Quartile'
     )
     
-    title(paste0("PM25 Emissions for ", vState, ", 2008"))
+    title(paste0("PM25 Emissions for ", vState))
     
 }
 
