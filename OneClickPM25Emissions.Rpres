@@ -9,19 +9,25 @@ transition: rotate
     
 An app for fine particle (PM2.5) emissions analysis  
 (Developed as part of "Developing Data Products" -   
-a Johns Hopkins Data Science Program, via Courseera)
+a Johns Hopkins Data Science Program, via Coursera)
 
 
-What we bring?
+What we offer?
 ========================================================
-
+  
+* Are you looking to move to a new town with better air quality?  
+* Or are you concerned about the air quality of your current town?  
+* But don't know how to get the information?  
+  
+***The App can help...***   
+ 
 In a nutshell, this application provides a comparative overview of fine particle (PM2.5) emissions in the United States.
 
-- A **Walk-Up-And-Use** app (i.e. no training required to use the app)
-- USA **map** with states color-shaded based on emissions
-- With **One Click** you can drill down to a state
-- Plot showing **emission trend** for your state of choice
-- Supporting detail **data** for curious users
+- **Walk-Up-And-Use** type App (i.e. no training needed)  
+- A **Color-Coded USA map** with shades based on emissions
+- With **One Click** you can drill down to a state and see all info
+- Plots showing **emission trend** for your state of choice
+- Easy access to **Supporting data** for curious users
 
 How does it look?
 ========================================================
@@ -32,18 +38,26 @@ User friendly app, with beautiful dashboard for your state
   
 Let us see how it looks for NY?
 ========================================================
-
+  
+Check out the lighter ones ...  
+  
 ```{r, echo=FALSE, cache=TRUE}
 #load data
-#pm25emissions2008ByState <- readRDS('./data/pm25emissions2008ByState.rds')
 pm25emissions2008ByCounty <- readRDS('./data/pm25emissions2008ByCounty.rds')
 
 # functions for plotting map
 source('./code/functions.R')
 
-# genarte plot/map
-#quartileStateUSMap()
+# genarte plot on state map
 quartileCountyMap('NY')
+
+```
+ *** 
+ See the whole US by county ...  
+ 
+```{r, echo=FALSE, cache=TRUE}
+# genarte plot on US map
+quartileCountyMap('')
 
 ```
   
@@ -52,11 +66,19 @@ Sneek Peek of the data
 ========================================================
 
 ```{r loadData, cache=TRUE, echo=TRUE}
-## load data
-df <- readRDS('./data/emissionsData.rds')
-
-## preview data
-summary(df)
-#head(emissionsData)
+df <- readRDS('./data/emissionsData.rds'); summary(df)
 
 ```
+  
+How did we do this?
+========================================================
+
+**Tools**: 
+* We build this app using R tools 
+    + *R is a programming language and software environment for statistical computing and graphics supported by the R Foundation for Statistical Computing*  
+* We used R, Rstudio, map, plotly, and Rstudio's Shinny to build the application
+* Web App is hosted on Rstudio's Shinny servers (http://shinnyapps.io) 
+  
+**Data**: 
+* Source of the data is the EPA National Emissions Inventory web site (http://www.epa.gov/ttn/chief/eiinformation.html)  
+
